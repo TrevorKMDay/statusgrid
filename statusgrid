@@ -1,0 +1,58 @@
+#!/bin/bash
+
+statusgridhome=~tkmday/statusgrid
+projecthome=$(pwd)
+padlength=3
+
+if [ ${#} -eq 1 ] ; then
+    project=${1}
+else
+    echo "Error: Project required."
+    exit 1
+fi
+
+config=${statusgridhome}/${project}-config.csv
+if [ -e ${config} ] ; then
+    targets=$(cat ${config} | awk -F',' '{print $1}')
+    short=$(cat ${config} | awk -F',' '{print $2}')
+else
+    echo "Error: ${config} doesn't exist!"
+    exit 1
+fi
+
+subjects=${projecthome}/subjects/session1/1[0-9][0-9][0-9][0-9][0-9]
+
+subjectslen=$(echo ${subjects} | awk '{print $1}' | basename - | \
+                tr '[:graph:]' ' ')
+
+echo -en "${subjectslen}\t"
+for s in ${short}
+do
+    printf "%${padlength}s" ${s}
+done
+echo
+
+
+for s in ${subjects}
+do
+    cd ${s}
+
+    echo -en "$(basename ${s})\t"
+
+    for t in ${targets}
+    do
+        makesummary=$(make ${t} -n 2> /dev/null)
+
+        if [[ "${makesummary}" == "make: Nothing to be done for '${t}'." ]]
+        then
+            printf "%${padlength}s" "*"
+        else
+            printf "%0.s " $(seq ${padlength})
+        fi
+
+    done
+
+    echo
+
+    cd ${projecthome}
+done
